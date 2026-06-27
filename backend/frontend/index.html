@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>منصة النقاط التلقائية</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, sans-serif;
+            background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+            min-height: 100vh;
+            color: #fff;
+            padding: 20px;
+        }
+        .container { max-width: 800px; margin: 0 auto; }
+        h1 { text-align: center; margin-bottom: 10px; }
+        .subtitle { text-align: center; color: #888; margin-bottom: 30px; }
+        .card {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; color: #ccc; }
+        .form-group input {
+            width: 100%; padding: 12px;
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 10px;
+            background: rgba(0,0,0,0.2);
+            color: #fff;
+        }
+        .btn {
+            width: 100%; padding: 12px;
+            border: none; border-radius: 10px;
+            background: linear-gradient(135deg, #00d2ff, #3a7bd5);
+            color: #fff; font-size: 1rem; cursor: pointer;
+        }
+        .btn:hover { opacity: 0.9; }
+        .recipe-item {
+            background: rgba(255,255,255,0.03);
+            border-radius: 12px; padding: 15px;
+            margin-bottom: 10px;
+            display: flex; justify-content: space-between;
+        }
+        .hidden { display: none; }
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; }
+        .tab-btn {
+            background: rgba(255,255,255,0.1);
+            border: none; color: #fff;
+            padding: 10px 20px; border-radius: 10px;
+            cursor: pointer;
+        }
+        .tab-btn.active { background: #00d2ff; }
+        .toast {
+            position: fixed; bottom: 20px; left: 50%;
+            transform: translateX(-50%);
+            background: #333; padding: 15px 30px;
+            border-radius: 10px; display: none;
+        }
+        .toast.show { display: block; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 منصة النقاط التلقائية</h1>
+        <p class="subtitle">أتمت جمع النقاط من أي موقع</p>
+        
+        <div id="authPage">
+            <div class="card">
+                <div id="loginForm">
+                    <h2>تسجيل الدخول</h2>
+                    <div class="form-group">
+                        <label>اسم المستخدم</label>
+                        <input type="text" id="loginUsername" placeholder="username">
+                    </div>
+                    <div class="form-group">
+                        <label>كلمة المرور</label>
+                        <input type="password" id="loginPassword" placeholder="password">
+                    </div>
+                    <button class="btn" onclick="login()">دخول</button>
+                    <p style="text-align:center; margin-top:15px; color:#888;">
+                        <a onclick="showRegister()" style="color:#00d2ff; cursor:pointer;">إنشاء حساب</a>
+                    </p>
+                </div>
+                <div id="registerForm" class="hidden">
+                    <h2>إنشاء حساب</h2>
+                    <div class="form-group">
+                        <label>البريد</label>
+                        <input type="email" id="regEmail" placeholder="email">
+                    </div>
+                    <div class="form-group">
+                        <label>اسم المستخدم</label>
+                        <input type="text" id="regUsername" placeholder="username">
+                    </div>
+                    <div class="form-group">
+                        <label>كلمة المرور</label>
+                        <input type="password" id="regPassword" placeholder="password">
+                    </div>
+                    <button class="btn" onclick="register()">إنشاء</button>
+                    <p style="text-align:center; margin-top:15px; color:#888;">
+                        <a onclick="showLogin()" style="color:#00d2ff; cursor:pointer;">لدي حساب</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <div id="mainApp" class="hidden">
+            <div class="tabs">
+                <button class="tab-btn active" onclick="showTab('dashboard')">📊 لوحة التحكم</button>
+                <button class="tab-btn" onclick="showTab('create')">➕ وصفة جديدة</button>
+            </div>
+            
+            <div id="dashboard" class="section">
+                <div class="card">
+                    <h2>وصفاتي</h2>
+                    <div id="recipeList"></div>
+                </div>
+            </div>
+            
+            <div id="create" class="section hidden">
+                <div class="card">
+                    <h2>إنشاء وصفة</h2>
+                    <form onsubmit="createRecipe(event)">
+                        <div class="form-group">
+                            <label>الاسم</label>
+                            <input type="text" id="recipeName" required>
+                        </div>
+                        <div class="form-group">
+                            <label>الرابط</label>
+                            <input type="url" id="recipeUrl" required>
+                        </div>
+                        <div class="form-group">
+                            <label>التكرار (دقيقة)</label>
+                            <input type="number" id="scheduleMinutes" value="60" min="5">
+                        </div>
+                        <button type="submit" class="btn">حفظ</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="toast" id="toast"></div>
+    
+    <script>
+        const API_URL = window.location.hostname.includes('railway') 
+            ? 'https://' + window.location.hostname 
+            : 'http://localhost:8000';
+        
+        let token = localStorage.getItem('token');
+        
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 3000);
+        }
+        
+        function showLogin() {
+            document.getElementById('loginForm').classList.remove('hidden');
+            document.getElementById('registerForm').classList.add('hidden');
+        }
+        function showRegister() {
+            document.getElementById('loginForm').classList.add('hidden');
+            document.getElementById('registerForm').classList.remove('hidden');
+        }
+        
+        async function login() {
+            const u = document.getElementById('loginUsername').value;
+            const p = document.getElementById('loginPassword').value;
+            const formData = new FormData();
+            formData.append('username', u);
+            formData.append('password', p);
+            
+            const res = await fetch(${API_URL}/auth/login, {method:'POST', body:formData});
+            const data = await res.json();
+            if(res.ok) {
+                token = data.access_token;
+                localStorage.setItem('token', token);
+                showApp();
+                showToast('تم الدخول!');
+            }
+        }
+        
+        async function register() {
+            const user = {
+                email: document.getElementById('regEmail').value,
+                username: document.getElementById('regUsername').value,
+                password: document.getElementById('regPassword').value
+            };
+            const res = await fetch(${API_URL}/auth/register, {
+                method:'POST',
+                headers:{'Content-Type':'application/json'},
+                body:JSON.stringify(user)
+            });
+            if(res.ok) {
+                const data = await res.json();
+                token = data.access_token;
+                localStorage.setItem('token', token);
+                showApp();
+                showToast('تم الإنشاء!');
+            }
+        }
+        
+        function showApp() {
+            document.getElementById('authPage').classList.add('hidden');
+            document.getElementById('mainApp').classList.remove('hidden');
+            loadRecipes();
+        }
+        
+        function showTab(tab) {
+            document.querySelectorAll('.section').forEach(s=>s.classList.add('hidden'));
+            document.getElementById(tab).classList.remove('hidden');
+            document.querySelectorAll('.tab-btn').forEach(t=>t.classList.remove('active'));
+            event.target.classList.add('active');
+        }
+        
+        async function loadRecipes() {
+            const res = await fetch(${API_URL}/recipes, {
+                headers:{'Authorization':`Bearer ${token}`}
+            });
+            const data = await res.json();
+            const list = document.getElementById('recipeList');
+            if(!data.my_recipes || data.my_recipes.length===0) {
+                list.innerHTML = '<p style="text-align:center;color:#888;">لا توجد وصفات</p>';
+                return;
+            }
+            list.innerHTML = data.my_recipes.map(r=>`
+                <div class="recipe-item">
+                    <div>
+                        <strong>${r.name}</strong><br>
+                        <small style="color:#888;">${r.url}</small>
+                    </div>
+                    <button onclick="runRecipe('${r.id}')" style="padding:5px 15px;background:#00d26a;border:none;border-radius:5px;color:#fff;cursor:pointer;">تشغيل</button>
+                </div>
+            `).join('');
+        }
+        
+        async function createRecipe(e) {
+            e.preventDefault();
+            const recipe = {
+                name: document.getElementById('recipeName').value,
+                url: document.getElementById('recipeUrl').value,
+                schedule_minutes: parseInt(document.getElementById('scheduleMinutes').value),
+                user_id: 'temp',
+                steps: []
+            };
+            const res = await fetch(${API_URL}/recipes, {
+                method:'POST',
+                headers:{
+                    'Content-Type':'application/json',
+                    'Authorization':`Bearer ${token}`
+                },
+                body:JSON.stringify(recipe)
+            });
+            if(res.ok) {
+                showToast('تم الحفظ!');
+                showTab('dashboard');
+                loadRecipes();
+            }
+        }
+        
+        async function runRecipe(id) {
+            showToast('جاري التشغيل...');
+            const res = await fetch(${API_URL}/recipes/${id}/run, {
+                method:'POST',
+                headers:{'Authorization':`Bearer ${token}`}
+            });
+            const data = await res.json();
+            showToast(data.success ? 'تم!' : 'فشل');
+        }
+        
+        if(token) showApp();
+    </script>
+</body>
+</html>
