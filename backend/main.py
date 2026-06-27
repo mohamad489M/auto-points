@@ -320,6 +320,6 @@ async def scheduler_loop():
 async def startup_event():
     asyncio.create_task(scheduler_loop())
 
-if _name_ == "_main_":
+if _name_ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
