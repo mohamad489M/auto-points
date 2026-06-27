@@ -12,7 +12,7 @@ RUN apt-get update && apt-get install -y \
 # Copy backend
 COPY backend/ ./backend/
 
-# Copy frontend
+# Copy frontend  ← هاد المهم!
 COPY frontend/ ./frontend/
 
 # Install Python dependencies
