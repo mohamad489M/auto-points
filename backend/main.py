@@ -1,3 +1,4 @@
+from fastapi.staticfiles import StaticFiles
 from fastapi import FastAPI, HTTPException, Depends, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
@@ -319,3 +320,4 @@ async def scheduler_loop():
 @app.on_event("startup")
 async def startup_event():
     asyncio.create_task(scheduler_loop())
+app.mount("/", StaticFiles(directory="../frontend", html=True), name="frontend")
