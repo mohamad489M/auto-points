@@ -12,6 +12,9 @@ RUN apt-get update && apt-get install -y \
 # Copy backend
 COPY backend/ ./backend/
 
+# Copy frontend
+COPY frontend/ ./frontend/
+
 # Install Python dependencies
 RUN pip install --no-cache-dir -r backend/requirements.txt
 
