@@ -320,4 +320,4 @@ async def scheduler_loop():
 @app.on_event("startup")
 async def startup_event():
     asyncio.create_task(scheduler_loop())
-app.mount("/", StaticFiles(directory="../frontend", html=True), name="frontend")
+app.mount("/app", StaticFiles(directory="../frontend", html=True), name="frontend")
